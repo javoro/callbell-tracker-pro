@@ -37,8 +37,12 @@ export default function FollowUpCard({ followUp, onDeleted }: Props) {
 
   async function handleDelete() {
     if (!confirm(`¿Eliminar "${followUp.title}"?`)) return;
-    await fetch(`/api/follow-ups/${followUp.id}`, { method: 'DELETE' });
-    onDeleted();
+    const res = await fetch(`/api/follow-ups/${followUp.id}`, { method: 'DELETE' });
+    if (res.ok) {
+      onDeleted();
+    } else {
+      alert('No se pudo eliminar el seguimiento. Intenta de nuevo.');
+    }
   }
 
   return (
@@ -75,7 +79,7 @@ export default function FollowUpCard({ followUp, onDeleted }: Props) {
         </span>
         {followUp.dueDate && (
           <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">
-            Vence: {new Date(followUp.dueDate + 'T00:00:00').toLocaleDateString('es-ES')}
+            Vence: {new Date(followUp.dueDate).toLocaleDateString('es-ES', { timeZone: 'UTC' })}
           </span>
         )}
       </div>
