@@ -61,6 +61,32 @@ function configPath(): string {
   return path.join(getDataDir(), 'configuracion.json')
 }
 
+function licenciaPath(): string {
+  return path.join(getDataDir(), 'licencia.json')
+}
+
+export async function readLicenciaClave(): Promise<string | null> {
+  try {
+    const raw = await fs.readFile(licenciaPath(), 'utf-8')
+    const data = JSON.parse(raw) as { clave?: string }
+    return data?.clave ?? null
+  } catch {
+    return null
+  }
+}
+
+export async function writeLicenciaClave(clave: string): Promise<void> {
+  await writeJsonSafe(licenciaPath(), { clave })
+}
+
+export async function deleteLicenciaClave(): Promise<void> {
+  try {
+    await fs.unlink(licenciaPath())
+  } catch {
+    // no existe, ignorar
+  }
+}
+
 async function readJsonFile<T>(filePath: string, defaultValue: T): Promise<T> {
   try {
     const raw = await fs.readFile(filePath, 'utf-8')

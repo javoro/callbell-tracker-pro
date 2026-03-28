@@ -23,6 +23,9 @@ const api = {
     ipcRenderer.invoke('dialog:showOpenDialog', options ?? {}),
   importExcel: (payload: { filePath: string; periodoSeleccionado: string }) =>
     ipcRenderer.invoke('import:excel', payload),
+  licenciaLeer: () => ipcRenderer.invoke('licencia:leer'),
+  licenciaGuardar: (clave: string) => ipcRenderer.invoke('licencia:guardar', clave),
+  licenciaEliminar: () => ipcRenderer.invoke('licencia:eliminar'),
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api)

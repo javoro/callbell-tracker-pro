@@ -2,6 +2,8 @@ import { formatMoney } from '@/lib/utils'
 import type { TrendPoint } from './analytics-otras-types'
 import type { TrendGroupBy } from './services/trendMetrics'
 import { TrendLineChart } from './TrendLineChart'
+import { useLicenseStore } from '@/store/license-store'
+import { Lock } from 'lucide-react'
 
 export type TrendVistaTendencia = 'barras' | 'lineas'
 
@@ -20,6 +22,8 @@ export function TrendCard({
   vistaTendencia,
   onVistaTendenciaChange,
 }: TrendCardProps) {
+  const hasPermiso = useLicenseStore((s) => s.hasPermiso)
+  const puedeTrendChart = hasPermiso('analytics_trend_chart')
 
   const maxLeads = Math.max(1, ...points.map((p) => p.leads))
   const maxVentas = Math.max(1, ...points.map((p) => p.ventas))
@@ -67,7 +71,14 @@ export function TrendCard({
       {points.length === 0 ? (
         <p className="text-sm text-muted-foreground">Sin datos para el periodo.</p>
       ) : vistaTendencia === 'lineas' ? (
-        <TrendLineChart points={points} />
+        puedeTrendChart ? (
+          <TrendLineChart points={points} />
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/40 p-6 text-center text-muted-foreground">
+            <Lock className="h-5 w-5 opacity-50" />
+            <p className="text-xs">La gráfica de líneas de tendencia no está incluida en tu licencia.</p>
+          </div>
+        )
       ) : (
         <div className="space-y-3">
           {points.map((p) => (

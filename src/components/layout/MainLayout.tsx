@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useSeguimientoStore } from '@/store/seguimiento-store'
 import { useCatalogosStore } from '@/store/catalogos-store'
+import { useLicenseStore } from '@/store/license-store'
 import { SeguimientoTable } from '@/features/seguimiento/SeguimientoTable'
 import { FiltrosBar } from '@/features/seguimiento/FiltrosBar'
 import { ModalAltaSeguimiento } from '@/features/seguimiento/ModalAltaSeguimiento'
@@ -42,6 +43,8 @@ export function MainLayout() {
   const removeSeguimiento = useSeguimientoStore((s) => s.removeSeguimiento)
   const removeSeguimientos = useSeguimientoStore((s) => s.removeSeguimientos)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const hasPermiso = useLicenseStore((s) => s.hasPermiso)
+  const puedeVerAnalytics = hasPermiso('analytics')
 
   useEffect(() => {
     let cancelled = false
@@ -162,8 +165,8 @@ export function MainLayout() {
             size="sm"
             variant={vista === 'analiticas' ? 'default' : 'outline'}
             onClick={() => setVista('analiticas')}
-            disabled={enAnaliticas}
-            title={enAnaliticas ? 'Ya está en Analíticas' : undefined}
+            disabled={enAnaliticas || !puedeVerAnalytics}
+            title={!puedeVerAnalytics ? 'Tu licencia no incluye Analíticas' : enAnaliticas ? 'Ya está en Analíticas' : undefined}
           >
             <BarChart3 className="h-4 w-4" />
             Analíticas

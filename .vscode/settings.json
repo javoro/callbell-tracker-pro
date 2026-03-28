@@ -1,0 +1,9 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "npx tsc": true,
+        "/^node -p \"require\\('\\./package\\.json'\\)\\.version\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

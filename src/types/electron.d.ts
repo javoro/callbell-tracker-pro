@@ -27,6 +27,9 @@ export interface ElectronAPI {
     catalogosAdded: number
     errors: string[]
   }>
+  licenciaLeer: () => Promise<{ ok: boolean; clave: string | null; error?: string }>
+  licenciaGuardar: (clave: string) => Promise<{ ok: boolean; error?: string }>
+  licenciaEliminar: () => Promise<{ ok: boolean; error?: string }>
 }
 
 declare global {

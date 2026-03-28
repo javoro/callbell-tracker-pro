@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
 import path from 'path'
-import { ensureDataDirs, readSeguimientos, writeSeguimientos, readCatalogos, writeCatalogos, readConfiguracion, writeConfiguracion, exportToExcel, exportAnalyticsToExcel, importFromExcel, seedCatalogosIfEmpty } from './persistencia'
+import { ensureDataDirs, readSeguimientos, writeSeguimientos, readCatalogos, writeCatalogos, readConfiguracion, writeConfiguracion, exportToExcel, exportAnalyticsToExcel, importFromExcel, seedCatalogosIfEmpty, readLicenciaClave, writeLicenciaClave, deleteLicenciaClave } from './persistencia'
 import { exportAnalyticsToPowerPoint } from './exportAnalyticsPowerPoint'
 import { setupAutoUpdater, checkForUpdatesManual } from './autoUpdater'
 import type { Seguimiento, Configuracion } from './types'
@@ -71,6 +71,34 @@ app.on('activate', () => {
 })
 
 function registerIpcHandlers() {
+  // ─── Licencia ──────────────────────────────────────────────
+  ipcMain.handle('licencia:leer', async () => {
+    try {
+      const clave = await readLicenciaClave()
+      return { ok: true, clave }
+    } catch (err) {
+      return { ok: false, clave: null, error: String(err) }
+    }
+  })
+
+  ipcMain.handle('licencia:guardar', async (_e, clave: string) => {
+    try {
+      await writeLicenciaClave(clave)
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: String(err) }
+    }
+  })
+
+  ipcMain.handle('licencia:eliminar', async () => {
+    try {
+      await deleteLicenciaClave()
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: String(err) }
+    }
+  })
+
   ipcMain.handle('seguimientos:get', async () => {
     try {
       const data = await readSeguimientos()

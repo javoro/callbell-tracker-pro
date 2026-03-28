@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { useLicenseStore } from '@/store/license-store'
 import { Label } from '@/components/ui/label'
 import { formatMoney } from '@/lib/utils'
 import {
@@ -85,6 +86,7 @@ export function SeccionAnalytics({
   }, [periodMode, weekNum, weekYear, rangeFromW, rangeFromY, rangeToW, rangeToY])
 
   const metaSemanal = config?.metaSemanal ?? null
+  const hasPermiso = useLicenseStore((s) => s.hasPermiso)
   const relevantes = useMemo(
     () => computeAnalytics(seguimientos, metaSemanal ?? null, periodFilter),
     [seguimientos, metaSemanal, periodFilter]
@@ -173,8 +175,8 @@ export function SeccionAnalytics({
             size="sm"
             variant="outline"
             onClick={handleExport}
-            disabled={exporting || exportingPpt || !enableExportExcel}
-            title={!enableExportExcel ? 'Exportación deshabilitada en esta vista' : undefined}
+            disabled={exporting || exportingPpt || !enableExportExcel || !hasPermiso('analytics_export_excel')}
+            title={!hasPermiso('analytics_export_excel') ? 'Tu licencia no incluye esta función' : !enableExportExcel ? 'Exportación deshabilitada en esta vista' : undefined}
           >
             {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
             Exportar a Excel
@@ -184,8 +186,8 @@ export function SeccionAnalytics({
               size="sm"
               variant="outline"
               onClick={handleExportPowerPoint}
-              disabled={exporting || exportingPpt || !enableExportExcel}
-              title={!enableExportExcel ? 'Exportación deshabilitada en esta vista' : 'Generar presentación PowerPoint'}
+              disabled={exporting || exportingPpt || !enableExportExcel || !hasPermiso('analytics_export_ppt')}
+              title={!hasPermiso('analytics_export_ppt') ? 'Tu licencia no incluye esta función' : !enableExportExcel ? 'Exportación deshabilitada en esta vista' : 'Generar presentación PowerPoint'}
             >
               {exportingPpt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Presentation className="h-4 w-4" />}
               Crear presentación
@@ -204,129 +206,135 @@ export function SeccionAnalytics({
           Semanas según calendario ISO (lunes a domingo). “Relevantes” compara con la semana ISO anterior
           salvo en rango, donde se muestran totales acumulados.
         </p>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant={periodMode === 'default' ? 'default' : 'outline'}
-            onClick={() => setPeriodMode('default')}
-          >
-            Semana actual (calendario)
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={periodMode === 'week' ? 'default' : 'outline'}
-            onClick={() => setPeriodMode('week')}
-          >
-            Una semana
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={periodMode === 'range' ? 'default' : 'outline'}
-            onClick={() => setPeriodMode('range')}
-          >
-            Rango de semanas
-          </Button>
-        </div>
-        {periodMode === 'week' && (
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <Label className="text-xs">Semana</Label>
-              <select
-                className="flex h-9 min-w-[5.5rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1"
-                value={weekNum}
-                onChange={(e) => setWeekNum(Number(e.target.value))}
+        {hasPermiso('analytics_filters') ? (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={periodMode === 'default' ? 'default' : 'outline'}
+                onClick={() => setPeriodMode('default')}
               >
-                {SEMANAS_ISO.map((n) => (
-                  <option key={n} value={n}>
-                    S{String(n).padStart(2, '0')}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label className="text-xs">Año ISO</Label>
-              <select
-                className="flex h-9 min-w-[5rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1"
-                value={weekYear}
-                onChange={(e) => setWeekYear(Number(e.target.value))}
+                Semana actual (calendario)
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={periodMode === 'week' ? 'default' : 'outline'}
+                onClick={() => setPeriodMode('week')}
               >
-                {yearOptions.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
+                Una semana
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={periodMode === 'range' ? 'default' : 'outline'}
+                onClick={() => setPeriodMode('range')}
+              >
+                Rango de semanas
+              </Button>
             </div>
-          </div>
-        )}
-        {periodMode === 'range' && (
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="flex flex-wrap items-end gap-2">
-              <span className="text-xs text-muted-foreground w-full sm:w-auto">Desde</span>
-              <div>
-                <Label className="text-xs">Semana</Label>
-                <select
-                  className="flex h-9 min-w-[5.5rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1"
-                  value={rangeFromW}
-                  onChange={(e) => setRangeFromW(Number(e.target.value))}
-                >
-                  {SEMANAS_ISO.map((n) => (
-                    <option key={n} value={n}>
-                      S{String(n).padStart(2, '0')}
-                    </option>
-                  ))}
-                </select>
+            {periodMode === 'week' && (
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <Label className="text-xs">Semana</Label>
+                  <select
+                    className="flex h-9 min-w-[5.5rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1"
+                    value={weekNum}
+                    onChange={(e) => setWeekNum(Number(e.target.value))}
+                  >
+                    {SEMANAS_ISO.map((n) => (
+                      <option key={n} value={n}>
+                        S{String(n).padStart(2, '0')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs">Año ISO</Label>
+                  <select
+                    className="flex h-9 min-w-[5rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1"
+                    value={weekYear}
+                    onChange={(e) => setWeekYear(Number(e.target.value))}
+                  >
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div>
-                <Label className="text-xs">Año ISO</Label>
-                <select
-                  className="flex h-9 min-w-[5rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1"
-                  value={rangeFromY}
-                  onChange={(e) => setRangeFromY(Number(e.target.value))}
-                >
-                  {yearOptions.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
+            )}
+            {periodMode === 'range' && (
+              <div className="flex flex-wrap items-end gap-4">
+                <div className="flex flex-wrap items-end gap-2">
+                  <span className="text-xs text-muted-foreground w-full sm:w-auto">Desde</span>
+                  <div>
+                    <Label className="text-xs">Semana</Label>
+                    <select
+                      className="flex h-9 min-w-[5.5rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1"
+                      value={rangeFromW}
+                      onChange={(e) => setRangeFromW(Number(e.target.value))}
+                    >
+                      {SEMANAS_ISO.map((n) => (
+                        <option key={n} value={n}>
+                          S{String(n).padStart(2, '0')}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Año ISO</Label>
+                    <select
+                      className="flex h-9 min-w-[5rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1"
+                      value={rangeFromY}
+                      onChange={(e) => setRangeFromY(Number(e.target.value))}
+                    >
+                      {yearOptions.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-end gap-2">
+                  <span className="text-xs text-muted-foreground w-full sm:w-auto">Hasta</span>
+                  <div>
+                    <Label className="text-xs">Semana</Label>
+                    <select
+                      className="flex h-9 min-w-[5.5rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1"
+                      value={rangeToW}
+                      onChange={(e) => setRangeToW(Number(e.target.value))}
+                    >
+                      {SEMANAS_ISO.map((n) => (
+                        <option key={n} value={n}>
+                          S{String(n).padStart(2, '0')}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Año ISO</Label>
+                    <select
+                      className="flex h-9 min-w-[5rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1"
+                      value={rangeToY}
+                      onChange={(e) => setRangeToY(Number(e.target.value))}
+                    >
+                      {yearOptions.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="flex flex-wrap items-end gap-2">
-              <span className="text-xs text-muted-foreground w-full sm:w-auto">Hasta</span>
-              <div>
-                <Label className="text-xs">Semana</Label>
-                <select
-                  className="flex h-9 min-w-[5.5rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1"
-                  value={rangeToW}
-                  onChange={(e) => setRangeToW(Number(e.target.value))}
-                >
-                  {SEMANAS_ISO.map((n) => (
-                    <option key={n} value={n}>
-                      S{String(n).padStart(2, '0')}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label className="text-xs">Año ISO</Label>
-                <select
-                  className="flex h-9 min-w-[5rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1"
-                  value={rangeToY}
-                  onChange={(e) => setRangeToY(Number(e.target.value))}
-                >
-                  {yearOptions.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
+            )}
+          </>
+        ) : (
+          <p className="text-xs text-muted-foreground italic">Los filtros de periodo no están disponibles en tu licencia. Se usa la semana actual (calendario).</p>
         )}
       </div>
 
