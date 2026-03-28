@@ -77,11 +77,18 @@ export default function FollowUpCard({ followUp, onDeleted }: Props) {
         <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${priorityColor[followUp.priority]}`}>
           Prioridad {priorityLabel[followUp.priority]}
         </span>
-        {followUp.dueDate && (
-          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">
-            Vence: {new Date(followUp.dueDate).toLocaleDateString('es-ES', { timeZone: 'UTC' })}
-          </span>
-        )}
+        {followUp.dueDate && (() => {
+          try {
+            const formatted = new Date(followUp.dueDate).toLocaleDateString('es-ES', { timeZone: 'UTC' });
+            return (
+              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">
+                Vence: {formatted}
+              </span>
+            );
+          } catch {
+            return null;
+          }
+        })()}
       </div>
 
       {followUp.notes && (

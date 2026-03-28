@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import type { FollowUp, CreateFollowUpInput } from '@/types';
 
-const DATA_FILE = path.join('/tmp', 'callbell-data.json');
+const DATA_FILE = process.env.DATA_FILE_PATH ?? path.join(process.cwd(), 'data', 'callbell-data.json');
 
 export function readData(): FollowUp[] {
   try {
@@ -15,9 +15,16 @@ export function readData(): FollowUp[] {
 }
 
 export function writeData(data: FollowUp[]): void {
+  const dir = path.dirname(DATA_FILE);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const tmpFile = DATA_FILE + '.tmp';
   fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2), 'utf-8');
-  fs.renameSync(tmpFile, DATA_FILE);
+  try {
+    fs.renameSync(tmpFile, DATA_FILE);
+  } catch (err) {
+    try { fs.unlinkSync(tmpFile); } catch { /* ignore cleanup errors */ }
+    throw err;
+  }
 }
 
 export function getAll(): FollowUp[] {
