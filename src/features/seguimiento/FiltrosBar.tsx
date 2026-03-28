@@ -1,11 +1,14 @@
+import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { RotateCcw } from 'lucide-react'
+import { ChevronDown, RotateCcw } from 'lucide-react'
 import dayjs from 'dayjs'
 import isoWeek from 'dayjs/plugin/isoWeek'
+import { cn } from '@/lib/utils'
 import { useSeguimientoStore } from '@/store/seguimiento-store'
 import { useCatalogosStore } from '@/store/catalogos-store'
+import type { FiltrosState } from '@/store/seguimiento-store'
 
 dayjs.extend(isoWeek)
 
@@ -23,7 +26,24 @@ function yearOptionsIso(): number[] {
 const PLACEHOLDER_BUSQUEDA =
   'Contacto, celular, vendedor, tema, cotización o pedido, folio de factura…'
 
+function countFiltrosActivos(f: FiltrosState): number {
+  let n = 0
+  if (f.fechaInicio) n++
+  if (f.fechaFin) n++
+  if (f.semanaIso) n++
+  if (f.añoIso) n++
+  if (f.motivoId) n++
+  if (f.comproId) n++
+  if (f.montoMin !== '') n++
+  if (f.montoMax !== '') n++
+  if (f.cotizadoMin !== '') n++
+  if (f.cotizadoMax !== '') n++
+  if (f.busquedaLibre.trim()) n++
+  return n
+}
+
 export function FiltrosBar() {
+  const [abierto, setAbierto] = useState(true)
   const { filtros, setFiltro, resetFiltros } = useSeguimientoStore()
   const catalogos = useCatalogosStore((s) => s.catalogos)
 
@@ -31,9 +51,32 @@ export function FiltrosBar() {
   const compros = catalogos.filter((c) => c.tipoCatalogo === 'compro' && c.activo)
 
   const yearOptions = yearOptionsIso()
+  const activos = useMemo(() => countFiltrosActivos(filtros), [filtros])
 
   return (
-    <div className="border-b border-border bg-pastel-morado/50 px-4 py-3 space-y-3">
+    <div className="border-b border-border bg-pastel-morado/50">
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-pastel-morado/70 transition-colors"
+        aria-expanded={abierto}
+      >
+        <span className="flex flex-wrap items-center gap-2 min-w-0">
+          <span className="text-sm font-medium text-foreground">Filtros de seguimientos</span>
+          {activos > 0 && (
+            <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
+              {activos} activo{activos === 1 ? '' : 's'}
+            </span>
+          )}
+        </span>
+        <ChevronDown
+          className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200', abierto && 'rotate-180')}
+          aria-hidden
+        />
+      </button>
+
+      {abierto && (
+        <div className="px-4 pb-3 pt-1 space-y-3 border-t border-border/40">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <div>
           <Label className="text-xs">Fecha desde</Label>
@@ -137,6 +180,8 @@ export function FiltrosBar() {
           Restablecer filtros
         </Button>
       </div>
+        </div>
+      )}
     </div>
   )
 }
