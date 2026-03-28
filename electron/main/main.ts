@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, Menu, session } from 'electron'
 import path from 'path'
 import { ensureDataDirs, readSeguimientos, writeSeguimientos, readCatalogos, writeCatalogos, readConfiguracion, writeConfiguracion, exportToExcel, exportAnalyticsToExcel, importFromExcel, seedCatalogosIfEmpty, readLicenciaClave, writeLicenciaClave, deleteLicenciaClave } from './persistencia'
 import { exportAnalyticsToPowerPoint } from './exportAnalyticsPowerPoint'
@@ -41,6 +41,28 @@ function showAcercaDe() {
 }
 
 app.whenReady().then(async () => {
+  // CSP en producción (app empaquetada / file://). En dev, Vite inyecta scripts inline
+  // para React Fast Refresh; forzar script-src 'self' rompe HMR y el preamble de @vitejs/plugin-react.
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    try {
+      const { hostname } = new URL(details.url)
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        callback({ responseHeaders: details.responseHeaders })
+        return
+      }
+    } catch {
+      /* file:// u otras URLs */
+    }
+    const csp =
+      "default-src 'self'; script-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co"
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [csp],
+      },
+    })
+  })
+
   await ensureDataDirs()
   await seedCatalogosIfEmpty()
   registerIpcHandlers()
