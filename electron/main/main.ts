@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
 import path from 'path'
 import { ensureDataDirs, readSeguimientos, writeSeguimientos, readCatalogos, writeCatalogos, readConfiguracion, writeConfiguracion, exportToExcel, exportAnalyticsToExcel, importFromExcel, seedCatalogosIfEmpty } from './persistencia'
 import { exportAnalyticsToPowerPoint } from './exportAnalyticsPowerPoint'
+import { setupAutoUpdater, checkForUpdatesManual } from './autoUpdater'
 import type { Seguimiento, Configuracion } from './types'
 
 let mainWindow: BrowserWindow | null = null
@@ -44,10 +45,16 @@ app.whenReady().then(async () => {
   await seedCatalogosIfEmpty()
   registerIpcHandlers()
   createWindow()
+  setupAutoUpdater(() => mainWindow)
   const menuTemplate = [
     {
       label: 'Ayuda',
       submenu: [
+        {
+          label: 'Buscar actualizaciones…',
+          click: () => checkForUpdatesManual(() => mainWindow),
+        },
+        { type: 'separator' },
         { label: 'Acerca de Callbell Tracker PRO', click: showAcercaDe },
       ],
     },
