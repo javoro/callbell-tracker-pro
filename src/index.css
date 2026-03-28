@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Paleta pastel: rosa, azul y morado — optimizada para contraste y UX */
+@layer base {
+  :root {
+    /* Fondo principal: rosa pastel muy suave */
+    --background: 340 45% 97%;
+    /* Texto: tono oscuro para legibilidad */
+    --foreground: 262 35% 18%;
+    /* Cards y superficies elevadas: azul pastel claro */
+    --card: 210 50% 98%;
+    --card-foreground: 262 35% 18%;
+    /* Botón principal y acciones: morado pastel más saturado (buen contraste) */
+    --primary: 262 52% 52%;
+    --primary-foreground: 0 0% 100%;
+    /* Secundario: azul pastel */
+    --secondary: 210 55% 91%;
+    --secondary-foreground: 262 35% 22%;
+    /* Zonas apagadas: morado muy suave */
+    --muted: 270 40% 94%;
+    --muted-foreground: 262 25% 45%;
+    /* Acentos (hover, destacados): rosa pastel */
+    --accent: 340 60% 91%;
+    --accent-foreground: 262 35% 22%;
+    /* Destructivo: rojo suave pero visible */
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+    /* Bordes e inputs: mezcla suave */
+    --border: 260 35% 88%;
+    --input: 260 35% 92%;
+    --ring: 262 52% 52%;
+    /* Pasteles nombrados para uso con opacidad en componentes */
+    --pastel-rosa: 340 60% 91%;
+    --pastel-azul: 210 55% 91%;
+    --pastel-morado: 262 45% 90%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}

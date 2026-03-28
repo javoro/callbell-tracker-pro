@@ -1,0 +1,51 @@
+# ─── Dependencias ────────────────────────────────────────
+node_modules/
+
+# ─── Build outputs ───────────────────────────────────────
+dist/
+dist-electron/
+release/
+
+# ─── Exports generados (conserva .gitkeep) ───────────────
+exports/*
+!exports/.gitkeep
+
+# ─── Datos de usuario (conserva .gitkeep) ────────────────
+data/*
+!data/.gitkeep
+
+# ─── Logs y caché ────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tsbuildinfo
+.cache/
+
+# ─── Sistema operativo ───────────────────────────────────
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ─── Entorno — NUNCA subir secretos ─────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── Editor / IDE ────────────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ─── Electron / Vite ─────────────────────────────────────
+*.local
+*.asar
+
+# ─── Archivos temporales ─────────────────────────────────
+*.tmp
+*.bak
+*.swp
+~$*
