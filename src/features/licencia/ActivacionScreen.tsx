@@ -23,7 +23,10 @@ export function ActivacionScreen({ onActivada }: ActivacionScreenProps) {
     }
     setLoading(true)
     setError(null)
-    const result = await validarLicencia(clave)
+    const machineId = window.electronAPI
+      ? ((await window.electronAPI.licenciaMachineId()).id ?? 'unknown')
+      : 'dev'
+    const result = await validarLicencia(clave, machineId)
     if (result.ok) {
       // Guardar la clave localmente para el próximo arranque
       if (window.electronAPI) {

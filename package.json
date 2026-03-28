@@ -1,7 +1,7 @@
 {
   "name": "callbell-seguimiento",
   "private": true,
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Aplicación de escritorio para seguimiento de llamadas e interacciones con clientes",
   "main": "dist-electron/main/main.js",
   "scripts": {

@@ -31,34 +31,39 @@ export const PERMISOS_DEFAULT: LicenciaPermisos = {
   analytics_filters: false,
 }
 
-export async function validarLicencia(clave: string): Promise<
+export async function validarLicencia(clave: string, machineId: string): Promise<
   | { ok: true; licencia: Licencia }
   | { ok: false; error: string }
 > {
   try {
     const { data, error } = await supabase
-      .from('licencias')
-      .select('clave, nombre, activa, permisos, vence_en')
-      .eq('clave', clave.trim().toUpperCase())
-      .maybeSingle()
+      .rpc('activar_licencia', {
+        p_clave: clave.trim().toUpperCase(),
+        p_machine_id: machineId,
+      })
 
     if (error) return { ok: false, error: 'Error al conectar con el servidor de licencias.' }
-    if (!data) return { ok: false, error: 'Clave de licencia no encontrada.' }
-    if (!data.activa) return { ok: false, error: 'Esta licencia ha sido desactivada. Contacta al proveedor.' }
 
-    if (data.vence_en) {
-      const vence = new Date(data.vence_en)
-      if (vence < new Date()) return { ok: false, error: `Esta licencia venció el ${data.vence_en}. Contacta al proveedor.` }
+    const result = data as {
+      ok: boolean
+      error?: string
+      clave?: string
+      nombre?: string
+      activa?: boolean
+      permisos?: LicenciaPermisos
+      vence_en?: string | null
     }
+
+    if (!result.ok) return { ok: false, error: result.error ?? 'Error desconocido.' }
 
     return {
       ok: true,
       licencia: {
-        clave: data.clave,
-        nombre: data.nombre,
-        activa: data.activa,
-        permisos: { ...PERMISOS_DEFAULT, ...data.permisos },
-        vence_en: data.vence_en ?? null,
+        clave: result.clave!,
+        nombre: result.nombre!,
+        activa: result.activa!,
+        permisos: { ...PERMISOS_DEFAULT, ...result.permisos },
+        vence_en: result.vence_en ?? null,
       },
     }
   } catch {

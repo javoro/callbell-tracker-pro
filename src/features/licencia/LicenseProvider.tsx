@@ -32,8 +32,10 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
       }
       setValidando(true)
       const r = await window.electronAPI.licenciaLeer()
+      const mid = await window.electronAPI.licenciaMachineId()
+      const machineId = mid.id ?? 'unknown'
       if (r.ok && r.clave) {
-        const result = await validarLicencia(r.clave)
+        const result = await validarLicencia(r.clave, machineId)
         if (result.ok) {
           setLicencia(result.licencia)
         } else {

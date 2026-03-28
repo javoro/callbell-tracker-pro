@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu, session } from 'electron'
 import path from 'path'
-import { ensureDataDirs, readSeguimientos, writeSeguimientos, readCatalogos, writeCatalogos, readConfiguracion, writeConfiguracion, exportToExcel, exportAnalyticsToExcel, importFromExcel, seedCatalogosIfEmpty, readLicenciaClave, writeLicenciaClave, deleteLicenciaClave } from './persistencia'
+import { ensureDataDirs, readSeguimientos, writeSeguimientos, readCatalogos, writeCatalogos, readConfiguracion, writeConfiguracion, exportToExcel, exportAnalyticsToExcel, importFromExcel, seedCatalogosIfEmpty, readLicenciaClave, writeLicenciaClave, deleteLicenciaClave, getMachineId } from './persistencia'
 import { exportAnalyticsToPowerPoint } from './exportAnalyticsPowerPoint'
 import { setupAutoUpdater, checkForUpdatesManual } from './autoUpdater'
 import type { Seguimiento, Configuracion } from './types'
@@ -94,6 +94,15 @@ app.on('activate', () => {
 
 function registerIpcHandlers() {
   // ─── Licencia ──────────────────────────────────────────────
+  ipcMain.handle('licencia:machine-id', async () => {
+    try {
+      const id = await getMachineId()
+      return { ok: true, id }
+    } catch (err) {
+      return { ok: false, id: null, error: String(err) }
+    }
+  })
+
   ipcMain.handle('licencia:leer', async () => {
     try {
       const clave = await readLicenciaClave()

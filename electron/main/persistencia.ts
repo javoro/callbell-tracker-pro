@@ -65,6 +65,23 @@ function licenciaPath(): string {
   return path.join(getDataDir(), 'licencia.json')
 }
 
+function machineIdPath(): string {
+  return path.join(getDataDir(), 'machine.json')
+}
+
+export async function getMachineId(): Promise<string> {
+  try {
+    const raw = await fs.readFile(machineIdPath(), 'utf-8')
+    const data = JSON.parse(raw) as { id?: string }
+    if (data?.id) return data.id
+  } catch {
+    // no existe aún, generar uno nuevo
+  }
+  const id = crypto.randomUUID()
+  await writeJsonSafe(machineIdPath(), { id })
+  return id
+}
+
 export async function readLicenciaClave(): Promise<string | null> {
   try {
     const raw = await fs.readFile(licenciaPath(), 'utf-8')
