@@ -65,7 +65,11 @@ export function SeccionAnalytics({
   const refTrendCapture = useRef<HTMLDivElement>(null)
   const trendPresentationMetaRef = useRef<TrendPresentationMeta | null>(null)
 
-  const [periodMode, setPeriodMode] = useState<'default' | 'week' | 'range'>('default')
+  const [periodMode, setPeriodMode] = useState<'default' | 'week' | 'range' | 'dateRange' | 'month'>('default')
+  const [dateRangeFrom, setDateRangeFrom] = useState(() => dayjs().subtract(7, 'day').format('YYYY-MM-DD'))
+  const [dateRangeTo, setDateRangeTo] = useState(() => dayjs().format('YYYY-MM-DD'))
+  const [monthNum, setMonthNum] = useState(() => dayjs().month() + 1)
+  const [monthYear, setMonthYear] = useState(() => dayjs().year())
   const [weekNum, setWeekNum] = useState(() => dayjs().isoWeek())
   const [weekYear, setWeekYear] = useState(() => dayjs().isoWeekYear())
   const [rangeFromW, setRangeFromW] = useState(() => Math.max(1, dayjs().isoWeek() - 3))
@@ -76,6 +80,8 @@ export function SeccionAnalytics({
   const periodFilter = useMemo<AnalyticsPeriodFilter>(() => {
     if (periodMode === 'default') return { mode: 'default' }
     if (periodMode === 'week') return { mode: 'week', isoWeek: weekNum, isoYear: weekYear }
+    if (periodMode === 'dateRange') return { mode: 'dateRange', dateFrom: dateRangeFrom, dateTo: dateRangeTo }
+    if (periodMode === 'month') return { mode: 'month', year: monthYear, month: monthNum }
     return {
       mode: 'range',
       weekFrom: rangeFromW,
@@ -83,7 +89,7 @@ export function SeccionAnalytics({
       weekTo: rangeToW,
       yearTo: rangeToY,
     }
-  }, [periodMode, weekNum, weekYear, rangeFromW, rangeFromY, rangeToW, rangeToY])
+  }, [periodMode, weekNum, weekYear, dateRangeFrom, dateRangeTo, monthNum, monthYear, rangeFromW, rangeFromY, rangeToW, rangeToY])
 
   const metaSemanal = config?.metaSemanal ?? null
   const hasPermiso = useLicenseStore((s) => s.hasPermiso)
@@ -203,8 +209,8 @@ export function SeccionAnalytics({
       <div className="rounded-lg border border-border bg-card p-4 shadow-sm space-y-3">
         <p className="text-sm font-medium text-foreground">Periodo de los cálculos</p>
         <p className="text-xs text-muted-foreground">
-          Semanas según calendario ISO (lunes a domingo). “Relevantes” compara con la semana ISO anterior
-          salvo en rango, donde se muestran totales acumulados.
+          Semanas según calendario ISO (lunes a domingo), rango de fechas personalizado o mes. “Relevantes” compara con el periodo anterior
+          (semana, rango equivalente o mes anterior) del mismo tamaño salvo en rango de semanas, donde se muestran totales acumulados.
         </p>
         {hasPermiso('analytics_filters') ? (
           <>
@@ -233,7 +239,80 @@ export function SeccionAnalytics({
               >
                 Rango de semanas
               </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={periodMode === 'dateRange' ? 'default' : 'outline'}
+                onClick={() => setPeriodMode('dateRange')}
+              >
+                Rango de fechas
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={periodMode === 'month' ? 'default' : 'outline'}
+                onClick={() => setPeriodMode('month')}
+              >
+                Un mes
+              </Button>
             </div>
+            {periodMode === 'dateRange' && (
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <Label className="text-xs">Desde</Label>
+                  <input
+                    type="date"
+                    className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm mt-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground"
+                    value={dateRangeFrom}
+                    onChange={(e) => setDateRangeFrom(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Hasta</Label>
+                  <input
+                    type="date"
+                    className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm mt-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground"
+                    value={dateRangeTo}
+                    onChange={(e) => setDateRangeTo(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+            {periodMode === 'month' && (
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <Label className="text-xs">Mes</Label>
+                  <select
+                    className="flex h-9 min-w-[7rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1 text-foreground"
+                    value={monthNum}
+                    onChange={(e) => setMonthNum(Number(e.target.value))}
+                  >
+                    {[
+                      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                    ].map((m, idx) => (
+                      <option key={idx} value={idx + 1}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs">Año</Label>
+                  <select
+                    className="flex h-9 min-w-[5rem] rounded-md border border-input bg-background px-2 py-1 text-sm mt-1 text-foreground"
+                    value={monthYear}
+                    onChange={(e) => setMonthYear(Number(e.target.value))}
+                  >
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
             {periodMode === 'week' && (
               <div className="flex flex-wrap items-end gap-3">
                 <div>
@@ -394,7 +473,7 @@ export function SeccionAnalytics({
                 <span className="font-medium">
                   {porcentajeMeta >= 0 ? '+' : ''}
                   {porcentajeMeta.toFixed(2)}% de la meta semanal
-                  {periodMode === 'range' ? ' (proporcional al número de semanas del rango)' : ''}.
+                  {periodMode === 'range' ? ' (proporcional al número de semanas del rango)' : periodMode === 'dateRange' ? ' (proporcional al número de días del rango)' : periodMode === 'month' ? ' (proporcional al número de días del mes)' : ''}.
                 </span>
               </p>
             )}

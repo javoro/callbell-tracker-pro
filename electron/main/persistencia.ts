@@ -422,6 +422,10 @@ export async function exportAnalyticsToExcel(
   const { semanaActual, semanaAnterior, deltas, porcentajeMeta } = data.relevantes
   const formatDelta = (n: number) => (n === 0 ? '' : n > 0 ? ` (+${n})` : ` (${n})`)
 
+  const labelActual = semanaActual.etiqueta.startsWith('S')
+    ? `Semana ${semanaActual.etiqueta.replace('S', '')}`
+    : semanaActual.etiqueta
+
   const rows: [string, string | number][] = [
     [`Leads totales ${semanaActual.etiqueta}`, `${semanaActual.leadsTotales}${semanaAnterior ? formatDelta(deltas.leads) : ''}`],
     ['Cotizaciones', `${semanaActual.cotizaciones}${semanaAnterior ? formatDelta(deltas.cotizaciones) : ''}`],
@@ -430,11 +434,14 @@ export async function exportAnalyticsToExcel(
   ]
 
   if (semanaAnterior) {
-    rows.push([`Ventas Semana ${semanaAnterior.etiqueta.replace('S', '')}`, semanaAnterior.ventas])
-    rows.push([`Ticket promedio ${semanaAnterior.etiqueta.replace('S', '')}`, semanaAnterior.ticketPromedio])
+    const labelAnterior = semanaAnterior.etiqueta.startsWith('S')
+      ? `Semana ${semanaAnterior.etiqueta.replace('S', '')}`
+      : semanaAnterior.etiqueta
+    rows.push([`Ventas ${labelAnterior}`, semanaAnterior.ventas])
+    rows.push([`Ticket promedio ${labelAnterior}`, semanaAnterior.ticketPromedio])
   }
-  rows.push([`Ventas ${semanaActual.etiqueta}`, semanaActual.ventas])
-  rows.push([`Ticket promedio ${semanaActual.etiqueta.replace('S', '')}`, semanaActual.ticketPromedio])
+  rows.push([`Ventas ${labelActual}`, semanaActual.ventas])
+  rows.push([`Ticket promedio ${labelActual}`, semanaActual.ticketPromedio])
   if (porcentajeMeta != null) {
     rows.push(['% de la meta semanal', porcentajeMeta])
   }

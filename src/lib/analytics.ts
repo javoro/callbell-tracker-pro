@@ -95,11 +95,13 @@ function calcularMetricas(registros: Seguimiento[], etiqueta: string, inicio: st
   }
 }
 
-/** Filtro de periodo para analíticas (semana ISO + año ISO). */
+/** Filtro de periodo para analíticas (semana ISO + año ISO, rango de fechas o mes). */
 export type AnalyticsPeriodFilter =
   | { mode: 'default' }
   | { mode: 'week'; isoYear: number; isoWeek: number }
   | { mode: 'range'; yearFrom: number; weekFrom: number; yearTo: number; weekTo: number }
+  | { mode: 'dateRange'; dateFrom: string; dateTo: string }
+  | { mode: 'month'; year: number; month: number }
 
 function inRangeFecha(s: Seguimiento, start: dayjs.Dayjs, end: dayjs.Dayjs): boolean {
   const d = dayjs(s.fecha)
@@ -142,6 +144,22 @@ export function filterSeguimientosByAnalyticsPeriod(
   if (filter.mode === 'week') {
     return activos.filter((s) => seguimientoEnSemanaIso(s.fecha, filter.isoWeek, filter.isoYear))
   }
+  if (filter.mode === 'dateRange') {
+    const start = dayjs(filter.dateFrom).startOf('day')
+    const end = dayjs(filter.dateTo).endOf('day')
+    return activos.filter((s) => {
+      const d = dayjs(s.fecha)
+      return d.isValid() && !d.isBefore(start, 'day') && !d.isAfter(end, 'day')
+    })
+  }
+  if (filter.mode === 'month') {
+    const start = dayjs(`${filter.year}-${String(filter.month).padStart(2, '0')}-01`).startOf('month')
+    const end = start.endOf('month')
+    return activos.filter((s) => {
+      const d = dayjs(s.fecha)
+      return d.isValid() && !d.isBefore(start, 'day') && !d.isAfter(end, 'day')
+    })
+  }
   const { start, end } = boundsIsoWeekRange(
     filter.yearFrom,
     filter.weekFrom,
@@ -167,6 +185,116 @@ export function computeAnalytics(
 
   const inRange = (s: Seguimiento, start: dayjs.Dayjs, end: dayjs.Dayjs) =>
     inRangeFecha(s, start, end)
+
+  if (periodFilter.mode === 'month') {
+    const start = dayjs(`${periodFilter.year}-${String(periodFilter.month).padStart(2, '0')}-01`).startOf('month')
+    const end = start.endOf('month')
+    const daysInMonth = start.daysInMonth()
+
+    const prevStart = start.subtract(1, 'month').startOf('month')
+    const prevEnd = prevStart.endOf('month')
+
+    const registrosActual = activos.filter((s) => {
+      const d = dayjs(s.fecha)
+      return d.isValid() && !d.isBefore(start, 'day') && !d.isAfter(end, 'day')
+    })
+    const registrosAnterior = activos.filter((s) => {
+      const d = dayjs(s.fecha)
+      return d.isValid() && !d.isBefore(prevStart, 'day') && !d.isAfter(prevEnd, 'day')
+    })
+
+    const mesesNombres = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ]
+    const etiquetaActual = `${mesesNombres[start.month()]} ${start.year()}`
+    const etiquetaAnterior = `${mesesNombres[prevStart.month()]} ${prevStart.year()}`
+
+    const semanaActual = calcularMetricas(
+      registrosActual,
+      etiquetaActual,
+      start.format('YYYY-MM-DD'),
+      end.format('YYYY-MM-DD')
+    )
+    const semanaAnterior = calcularMetricas(
+      registrosAnterior,
+      etiquetaAnterior,
+      prevStart.format('YYYY-MM-DD'),
+      prevEnd.format('YYYY-MM-DD')
+    )
+
+    const deltas: Deltas = {
+      leads: semanaActual.leadsTotales - semanaAnterior.leadsTotales,
+      cotizaciones: semanaActual.cotizaciones - semanaAnterior.cotizaciones,
+      concretadas: semanaActual.concretadasEnVenta - semanaAnterior.concretadasEnVenta,
+    }
+
+    let porcentajeMeta: number | null = null
+    if (metaSemanal != null && metaSemanal > 0) {
+      porcentajeMeta = (semanaActual.ventas / (metaSemanal * (daysInMonth / 7))) * 100
+    }
+
+    return {
+      semanaActual,
+      semanaAnterior,
+      deltas,
+      metaSemanal,
+      porcentajeMeta,
+    }
+  }
+
+  if (periodFilter.mode === 'dateRange') {
+    const start = dayjs(periodFilter.dateFrom).startOf('day')
+    const end = dayjs(periodFilter.dateTo).endOf('day')
+    const daysCount = Math.max(1, end.diff(start, 'day') + 1)
+
+    const prevStart = start.subtract(daysCount, 'day')
+    const prevEnd = start.subtract(1, 'day')
+
+    const registrosActual = activos.filter((s) => {
+      const d = dayjs(s.fecha)
+      return d.isValid() && !d.isBefore(start, 'day') && !d.isAfter(end, 'day')
+    })
+    const registrosAnterior = activos.filter((s) => {
+      const d = dayjs(s.fecha)
+      return d.isValid() && !d.isBefore(prevStart, 'day') && !d.isAfter(prevEnd, 'day')
+    })
+
+    const etiquetaActual = `${start.format('DD/MM/YYYY')}–${end.format('DD/MM/YYYY')}`
+    const etiquetaAnterior = `${prevStart.format('DD/MM/YYYY')}–${prevEnd.format('DD/MM/YYYY')}`
+
+    const semanaActual = calcularMetricas(
+      registrosActual,
+      etiquetaActual,
+      start.format('YYYY-MM-DD'),
+      end.format('YYYY-MM-DD')
+    )
+    const semanaAnterior = calcularMetricas(
+      registrosAnterior,
+      etiquetaAnterior,
+      prevStart.format('YYYY-MM-DD'),
+      prevEnd.format('YYYY-MM-DD')
+    )
+
+    const deltas: Deltas = {
+      leads: semanaActual.leadsTotales - semanaAnterior.leadsTotales,
+      cotizaciones: semanaActual.cotizaciones - semanaAnterior.cotizaciones,
+      concretadas: semanaActual.concretadasEnVenta - semanaAnterior.concretadasEnVenta,
+    }
+
+    let porcentajeMeta: number | null = null
+    if (metaSemanal != null && metaSemanal > 0) {
+      porcentajeMeta = (semanaActual.ventas / (metaSemanal * (daysCount / 7))) * 100
+    }
+
+    return {
+      semanaActual,
+      semanaAnterior,
+      deltas,
+      metaSemanal,
+      porcentajeMeta,
+    }
+  }
 
   if (periodFilter.mode === 'range') {
     const { start, end } = boundsIsoWeekRange(
