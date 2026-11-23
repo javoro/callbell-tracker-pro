@@ -8,11 +8,13 @@ import { Loader2, ShieldCheck } from 'lucide-react'
 
 interface ActivacionScreenProps {
   onActivada: () => void
+  claveInicial?: string
+  errorInicial?: string
 }
 
-export function ActivacionScreen({ onActivada }: ActivacionScreenProps) {
-  const [clave, setClave] = useState('')
-  const [error, setError] = useState<string | null>(null)
+export function ActivacionScreen({ onActivada, claveInicial = '', errorInicial }: ActivacionScreenProps) {
+  const [clave, setClave] = useState(claveInicial)
+  const [error, setError] = useState<string | null>(errorInicial ?? null)
   const [loading, setLoading] = useState(false)
   const setLicencia = useLicenseStore((s) => s.setLicencia)
 

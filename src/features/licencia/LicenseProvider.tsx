@@ -21,6 +21,7 @@ const DEV_LICENSE = {
 export function LicenseProvider({ children }: { children: React.ReactNode }) {
   const { setLicencia, setValidando, licencia } = useLicenseStore()
   const [verificada, setVerificada] = useState(false)
+  const [sinConexion, setSinConexion] = useState<{ clave: string; error: string } | null>(null)
 
   useEffect(() => {
     async function verificar() {
@@ -39,8 +40,12 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
         if (result.ok) {
           setLicencia(result.licencia)
         } else {
-          // La clave guardada ya no es válida (revocada, vencida…)
-          await window.electronAPI.licenciaEliminar()
+          if (result.rechazada) {
+            // La clave guardada ya no es válida (revocada, vencida…)
+            await window.electronAPI.licenciaEliminar()
+          } else {
+            setSinConexion({ clave: r.clave, error: result.error })
+          }
           setLicencia(false)
         }
       } else {
@@ -66,6 +71,8 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
   if (licencia === false) {
     return (
       <ActivacionScreen
+        claveInicial={sinConexion?.clave}
+        errorInicial={sinConexion?.error}
         onActivada={() => {
           // El store ya tiene la licencia, solo re-trigger
           setVerificada(true)

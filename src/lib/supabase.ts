@@ -33,7 +33,8 @@ export const PERMISOS_DEFAULT: LicenciaPermisos = {
 
 export async function validarLicencia(clave: string, machineId: string): Promise<
   | { ok: true; licencia: Licencia }
-  | { ok: false; error: string }
+  // rechazada: el servidor negó la clave; false = no se pudo consultar (la clave puede seguir siendo válida)
+  | { ok: false; rechazada: boolean; error: string }
 > {
   try {
     const { data, error } = await supabase
@@ -42,7 +43,7 @@ export async function validarLicencia(clave: string, machineId: string): Promise
         p_machine_id: machineId,
       })
 
-    if (error) return { ok: false, error: 'Error al conectar con el servidor de licencias.' }
+    if (error) return { ok: false, rechazada: false, error: 'Error al conectar con el servidor de licencias.' }
 
     const result = data as {
       ok: boolean
@@ -54,7 +55,7 @@ export async function validarLicencia(clave: string, machineId: string): Promise
       vence_en?: string | null
     }
 
-    if (!result.ok) return { ok: false, error: result.error ?? 'Error desconocido.' }
+    if (!result.ok) return { ok: false, rechazada: true, error: result.error ?? 'Error desconocido.' }
 
     return {
       ok: true,
@@ -67,6 +68,6 @@ export async function validarLicencia(clave: string, machineId: string): Promise
       },
     }
   } catch {
-    return { ok: false, error: 'Sin conexión a internet. Verifica tu conexión e intenta de nuevo.' }
+    return { ok: false, rechazada: false, error: 'Sin conexión a internet. Verifica tu conexión e intenta de nuevo.' }
   }
 }
